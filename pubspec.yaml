@@ -1,0 +1,5 @@
+name: caller_info
+version: 0.0.1
+author: Andrew Mezoni <andrew.mezoni@gmail.com>
+description: Caller info (file, class, method, line number)
+homepage: https://github.com/mezoni/caller_info
