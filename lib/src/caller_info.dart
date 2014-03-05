@@ -176,6 +176,10 @@ class CallerInfo {
     // Combine "file name"
     var charCodes = new List();
     for (var i = 0; i <= lastPart; i++) {
+      if(i > 0) {
+        charCodes.add(58);
+      }
+
       var part = fileParts[i];
       var length = part.length;
       for(var j = 0; j < length; j++) {
