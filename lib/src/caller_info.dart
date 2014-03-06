@@ -13,9 +13,7 @@ class CallerInfo {
     try {
       throw "";
     } catch (e, s) {
-      // "throw" consuming 8% of the time
       // "s.toString()" consuming 87% of the time
-      // "_parse(s)" consuming 5% of the time
       _parse(s.toString());
     }
   }
@@ -65,59 +63,51 @@ class CallerInfo {
       }
     }
 
+    var frameStart = pos - 1;
     // Parse "caller"
-    var start = pos - 1;
-    while(true) {
+    while (true) {
       if (pos == length) {
         return;
       }
 
       if (trace.codeUnitAt(pos++) == 40) {
         var end = pos - 1;
-        while(true) {
-          if(trace.codeUnitAt(end--) != 32) {
+        while (true) {
+          if (trace.codeUnitAt(end--) != 32) {
             break;
           }
         }
 
-        caller = trace.substring(start, end);
+        caller = trace.substring(frameStart, end);
         break;
       }
     }
 
     // Parse "source url"
-    int c;
-    var part = [];
-    var fileParts = [part];
+    var sourceStart = pos;
+    var separators = [];
     while (true) {
       if (pos == length) {
         return;
       }
 
-      c = trace.codeUnitAt(pos++);
-      if (c == 41) {
+      var c = trace.codeUnitAt(pos++);
+      if (c == 58) {
+        separators.add(pos - 1);
+      } else if (c == 41) {
         break;
       }
-
-      if (c == 58) {
-        part = [];
-        fileParts.add(part);
-        continue;
-      }
-
-      part.add(c);
     }
 
-    // Locate "line number" part
-    var partsCount = fileParts.length;
-    int lastPart;
-    List linePart;
-    for (lastPart = partsCount - 1; lastPart >= 0; lastPart--) {
-      var part = fileParts[lastPart];
-      var length3 = part.length;
-      bool success;
-      for (var j = 0; j < length3; j++) {
-        var c = part[j];
+    // Locate "line number"
+    var sourceEnd = pos - 1;
+    var lineLength = 0;
+    for (int start, i = separators.length - 1; i >= 0; i--, lineLength =
+        sourceEnd - start, sourceEnd = start - 1) {
+      start = separators[i] + 1;
+      var success = false;
+      for (var j = start; j < sourceEnd; j++) {
+        var c = trace.codeUnitAt(j);
         if (c >= 48 && c <= 57) {
           success = true;
         } else {
@@ -126,41 +116,26 @@ class CallerInfo {
         }
       }
 
-      if (success == true) {
-        linePart = part;
-      } else {
+      if (!success) {
         break;
       }
     }
 
     // Parse "line number"
-    if (linePart != null) {
-      var length = linePart.length;
+    if (sourceEnd != pos - 1) {
       var number = 0;
       var power = 1;
-      for (var i = length - 1; i >= 0; i--, power *= 10) {
-        number += (linePart[i] - 48) * power;
+      var start = sourceEnd + 1;
+      for (var i = lineLength - 1; i >= 0; i--, power *= 10) {
+        number += (trace.codeUnitAt(start + i) - 48) * power;
       }
 
       line = number;
     }
 
-    // Combine "file name"
-    var charCodes = new List();
-    for (var i = 0; i <= lastPart; i++) {
-      if (i > 0) {
-        charCodes.add(58);
-      }
-
-      var part = fileParts[i];
-      var length = part.length;
-      for (var j = 0; j < length; j++) {
-        charCodes.add(part[j]);
-      }
-    }
-
-    source = new String.fromCharCodes(charCodes);
-    frame = trace.substring(start, pos);
+    // Combine "source"
+    source = trace.substring(sourceStart, sourceEnd);
+    frame = trace.substring(frameStart, pos);
   }
 
   String toString() => frame;
