@@ -52,15 +52,13 @@ class CallerInfo {
       }
     }
 
-    int c;
     // Skip spaces between "frame number" and "caller"
     while (true) {
       if (pos == length) {
         return;
       }
 
-      c = trace.codeUnitAt(pos++);
-      if (c != 32) {
+      if (trace.codeUnitAt(pos++) != 32) {
         break;
       }
     }
@@ -72,8 +70,7 @@ class CallerInfo {
         return;
       }
 
-      c = trace.codeUnitAt(pos++);
-      if (c == 40) {
+      if (trace.codeUnitAt(pos++) == 40) {
         var end = pos - 1;
         while(true) {
           if(trace.codeUnitAt(end--) != 32) {
@@ -87,6 +84,7 @@ class CallerInfo {
     }
 
     // Parse "source url"
+    int c;
     var part = [];
     var fileParts = [part];
     while (true) {
