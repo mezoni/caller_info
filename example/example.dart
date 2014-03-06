@@ -7,9 +7,9 @@ void main() {
 class Foo {
   static void test() {
     var ci = new CallerInfo();
-    print("file: ${ci.fileName}");
-    print("class: ${ci.className}");
-    print("method: ${ci.methodName}");
-    print("line: ${ci.lineNumber}");
+    print("frame: ${ci.frame}");
+    print("source: ${ci.source}");
+    print("caller: ${ci.caller}");
+    print("line: ${ci.line}");
   }
 }
