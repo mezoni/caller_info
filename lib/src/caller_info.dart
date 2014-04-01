@@ -3,55 +3,109 @@ part of caller_info;
 class CallerInfo {
   static const String _ANONYMOUS_CLOSURE = "<anonymous closure>";
 
-  String caller = "";
+  String _caller;
 
-  bool closure = false;
+  List<int> _callerSeparators = new List<int>();
 
-  String frame = "";
+  bool _closure;
 
-  int line = 0;
+  String _frame;
 
-  String method = "";
+  int _frameEnd;
 
-  String source = "";
+  int _frameStart;
 
-  String type = "";
+  int _line = 0;
 
-  static String toFilePath(String source) {
-    if (source == null || source.isEmpty) {
-      return "";
-    }
+  String _method;
 
-    var uri = Uri.parse(source);
-    switch (uri.scheme) {
-      case "file":
-        return uri.toFilePath();
-      case "package":
-        var packageRoot = Platform.packageRoot;
-        if (packageRoot.isEmpty) {
-          var script = Platform.script.toFilePath();
-          packageRoot = pathos.join(pathos.dirname(script), "packages");
-        } else {
-          packageRoot = pathos.normalize(packageRoot);
-        }
+  String _source;
 
-        return pathos.join(packageRoot, uri.path);
-    }
+  int _sourceEnd;
 
-    return "";
-  }
+  int _sourceStart;
+
+  String _trace;
+
+  String _type;
 
   CallerInfo() {
     try {
       throw "";
     } catch (e, s) {
       // "s.toString()" consuming 87% of the time
-      _parse(s.toString());
+      _trace = s.toString();
+      _parse();
     }
   }
 
-  void _parse(String trace) {
-    var length = trace.length;
+  String get caller {
+    if (_caller == null) {
+      //
+    }
+
+    return _caller;
+  }
+
+  bool get closure {
+    if (_closure == null) {
+      _parseCaller();
+    }
+
+    return _closure;
+  }
+
+  String get frame {
+    if (_frame == null) {
+      if (_frameStart != null && _frameEnd != null) {
+        _frame = _trace.substring(_frameStart, _frameEnd);
+      } else {
+        _frame = "";
+      }
+    }
+
+    return _frame;
+  }
+
+  int get line => _line;
+
+  String get method {
+    if (_method == null) {
+      _parseCaller();
+    }
+
+    return _method;
+  }
+
+  String get source {
+    if (_source == null) {
+      if (_sourceStart != null && _sourceEnd != null) {
+        _source = _trace.substring(_sourceStart, _sourceEnd);
+      } else {
+        _source = "";
+      }
+    }
+
+    return _source;
+  }
+
+  /*
+  String get path {
+    // TODO: path not implemented
+    return "";
+  }
+  */
+
+  String get type {
+    if (_type == null) {
+      _parseCaller();
+    }
+
+    return _type;
+  }
+
+  void _parse() {
+    var length = _trace.length;
     var pos = 0;
     // Skip first line
     while (true) {
@@ -59,7 +113,7 @@ class CallerInfo {
         return;
       }
 
-      if (trace.codeUnitAt(pos++) == 10) {
+      if (_trace.codeUnitAt(pos++) == 10) {
         break;
       }
     }
@@ -69,7 +123,7 @@ class CallerInfo {
     }
 
     // Skip "#"
-    if (trace.codeUnitAt(pos++) != 35) {
+    if (_trace.codeUnitAt(pos++) != 35) {
       return;
     }
 
@@ -79,7 +133,7 @@ class CallerInfo {
         return;
       }
 
-      if (trace.codeUnitAt(pos++) == 32) {
+      if (_trace.codeUnitAt(pos++) == 32) {
         break;
       }
     }
@@ -90,45 +144,43 @@ class CallerInfo {
         return;
       }
 
-      if (trace.codeUnitAt(pos++) != 32) {
+      if (_trace.codeUnitAt(pos++) != 32) {
         break;
       }
     }
 
-    var frameStart = pos - 1;
-
+    _frameStart = pos - 1;
     // Parse "caller"
-    var callerSeparators = new List<int>();
     while (true) {
       if (pos == length) {
         return;
       }
 
-      var c = trace.codeUnitAt(pos++);
+      var c = _trace.codeUnitAt(pos++);
       if (c == 46) {
-        callerSeparators.add(pos - frameStart - 1);
+        _callerSeparators.add(pos - _frameStart - 1);
       } else if (c == 40) {
         var end = pos - 1;
         while (true) {
-          if (trace.codeUnitAt(end--) != 32) {
+          if (_trace.codeUnitAt(end--) != 32) {
             break;
           }
         }
 
-        caller = trace.substring(frameStart, end);
+        _caller = _trace.substring(_frameStart, end);
         break;
       }
     }
 
     // Parse "source url"
-    var sourceStart = pos;
+    _sourceStart = pos;
     var separators = [];
     while (true) {
       if (pos == length) {
         return;
       }
 
-      var c = trace.codeUnitAt(pos++);
+      var c = _trace.codeUnitAt(pos++);
       if (c == 58) {
         separators.add(pos - 1);
       } else if (c == 41) {
@@ -137,14 +189,14 @@ class CallerInfo {
     }
 
     // Locate "line number"
-    var sourceEnd = pos - 1;
+    _sourceEnd = pos - 1;
     var lineLength = 0;
     for (int start,
-        i = separators.length - 1; i >= 0; i--, lineLength = sourceEnd - start, sourceEnd = start - 1) {
+        i = separators.length - 1; i >= 0; i--, lineLength = _sourceEnd - start, _sourceEnd = start - 1) {
       start = separators[i] + 1;
       var success = false;
-      for (var j = start; j < sourceEnd; j++) {
-        var c = trace.codeUnitAt(j);
+      for (var j = start; j < _sourceEnd; j++) {
+        var c = _trace.codeUnitAt(j);
         if (c >= 48 && c <= 57) {
           success = true;
         } else {
@@ -159,44 +211,48 @@ class CallerInfo {
     }
 
     // Parse "line number"
-    if (sourceEnd != pos - 1) {
+    if (_sourceEnd != pos - 1) {
       var number = 0;
       var power = 1;
-      var start = sourceEnd + 1;
+      var start = _sourceEnd + 1;
       for (var i = lineLength - 1; i >= 0; i--, power *= 10) {
-        number += (trace.codeUnitAt(start + i) - 48) * power;
+        number += (_trace.codeUnitAt(start + i) - 48) * power;
       }
 
-      line = number;
+      _line = number;
     }
 
-    // Combine "source"
-    source = trace.substring(sourceStart, sourceEnd);
-    frame = trace.substring(frameStart, pos);
 
-    // Parse type, method, closure
-    length = caller.length;
-    var count = callerSeparators.length;
+    _frameEnd = pos;
+  }
+
+  void _parseCaller() {
+    var caller = this.caller;
+    _closure = false;
+    _method = "";
+    _type = "";
+    var length = _caller.length;
+    var count = _callerSeparators.length;
     if (count == 0) {
-      method = caller;
+      _method = _caller;
       return;
     }
 
-    var start = callerSeparators[0] + 1;
-    var next = count == 1 ? length : callerSeparators[1];
-    var part2 = caller.substring(start, next);
+    var start = _callerSeparators[0] + 1;
+    var next = count == 1 ? length : _callerSeparators[1];
+    var part2 = _caller.substring(start, next);
     if (part2 == _ANONYMOUS_CLOSURE) {
-      method = caller.substring(0, start - 1);
-      closure = true;
+      _method = _caller.substring(0, start - 1);
+      _closure = true;
       return;
     }
 
-    type = caller.substring(0, start - 1);
-    method = caller.substring(start, next);
+    _type = _caller.substring(0, start - 1);
+    _method = _caller.substring(start, next);
     if (count > 1) {
-      closure = true;
+      _closure = true;
     }
   }
 
-  String toString() => frame;
+  String toString() => _frame;
 }
