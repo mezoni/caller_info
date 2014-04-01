@@ -1,24 +1,28 @@
 import 'package:caller_info/caller_info.dart';
 
 void main() {
+  printInfo(new CallerInfo());
   Foo.test();
-  try {
-    Foo.coolMethod();
-  } catch(e) {
-    print(e);
-  }
+  new Foo().testClosure();
 }
 
 class Foo {
   static void test() {
-    var ci = new CallerInfo();
-    print("frame: ${ci.frame}");
-    print("source: ${ci.source}");
-    print("caller: ${ci.caller}");
-    print("line: ${ci.line}");
+    printInfo(new CallerInfo());
   }
 
-  static void coolMethod() {
-    throw new UnimplementedError(new CallerInfo().caller);
+  void testClosure() {
+    (() => printInfo(new CallerInfo()))();
   }
+}
+
+void printInfo(CallerInfo ci) {
+  print("======= Caller info =======");
+  print("frame: ${ci.frame}");
+  print("source: ${ci.source}");
+  print("line: ${ci.line}");
+  print("caller: ${ci.caller}");
+  print("type: ${ci.type}");
+  print("method: ${ci.method}");
+  print("closure: ${ci.closure}");
 }

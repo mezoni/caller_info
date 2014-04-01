@@ -1,7 +1,8 @@
 name: caller_info
-version: 0.0.5
+version: 0.0.6
 author: Andrew Mezoni <andrew.mezoni@gmail.com>
-description: Caller info (frame, source, caller, line number)
+description: Caller info (caller, closure, frame, line, method, source, type).
 homepage: https://github.com/mezoni/caller_info
 dev_dependencies:
+  path: any
   unittest: any

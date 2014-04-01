@@ -1,42 +1,64 @@
 caller_info
 ===========
 
-Caller info (frame, source, caller, line number)
+Caller info (caller, closure, frame, line, method, source, type).
 
 ```dart
 import 'package:caller_info/caller_info.dart';
 
 void main() {
+  printInfo(new CallerInfo());
   Foo.test();
-  try {
-    Foo.coolMethod();
-  } catch(e) {
-    print(e);
-  }
+  new Foo().testClosure();
 }
 
 class Foo {
   static void test() {
-    var ci = new CallerInfo();
-    print("frame: ${ci.frame}");
-    print("source: ${ci.source}");
-    print("caller: ${ci.caller}");
-    print("line: ${ci.line}");
+    printInfo(new CallerInfo());
   }
 
-  static void coolMethod() {
-    throw new UnimplementedError(new CallerInfo().caller);
+  void testClosure() {
+    (() => printInfo(new CallerInfo()))();
   }
 }
 
+void printInfo(CallerInfo ci) {
+  print("======= Caller info =======");
+  print("frame: ${ci.frame}");
+  print("source: ${ci.source}");
+  print("line: ${ci.line}");
+  print("caller: ${ci.caller}");
+  print("type: ${ci.type}");
+  print("method: ${ci.method}");
+  print("closure: ${ci.closure}");
+}
 ```
 
 Output:
 
 ```
-frame: Foo.test (file:///C:/Users/user/dart/caller_info/example/example.dart:14:18)
-source: file:///C:/Users/user/dart/caller_info/example/example.dart
+======= Caller info =======
+frame: main (file:///home/andrew/dart/caller_info/example/example.dart:4:17)
+source: file:///home/andrew/dart/caller_info/example/example.dart
+line: 4
+caller: main
+type: 
+method: main
+closure: false
+======= Caller info =======
+frame: Foo.test (file:///home/andrew/dart/caller_info/example/example.dart:11:19)
+source: file:///home/andrew/dart/caller_info/example/example.dart
+line: 11
 caller: Foo.test
-line: 14
-UnimplementedError: Foo.coolMethod
+type: Foo
+method: test
+closure: false
+======= Caller info =======
+frame: Foo.testClosure.<anonymous closure> (file:///home/andrew/dart/caller_info/example/example.dart:15:26)
+source: file:///home/andrew/dart/caller_info/example/example.dart
+line: 15
+caller: Foo.testClosure.<anonymous closure>
+type: Foo
+method: testClosure
+closure: true
 ```
