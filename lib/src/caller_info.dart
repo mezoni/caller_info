@@ -40,10 +40,6 @@ class CallerInfo {
   }
 
   String get caller {
-    if (_caller == null) {
-      //
-    }
-
     return _caller;
   }
 
@@ -191,8 +187,7 @@ class CallerInfo {
     // Locate "line number"
     _sourceEnd = pos - 1;
     var lineLength = 0;
-    for (int start,
-        i = separators.length - 1; i >= 0; i--, lineLength = _sourceEnd - start, _sourceEnd = start - 1) {
+    for (int start, i = separators.length - 1; i >= 0; i--, lineLength = _sourceEnd - start, _sourceEnd = start - 1) {
       start = separators[i] + 1;
       var success = false;
       for (var j = start; j < _sourceEnd; j++) {
