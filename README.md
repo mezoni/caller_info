@@ -1,31 +1,27 @@
 caller_info
 ===========
 
-Caller info (caller, closure, frame, line, method, source, type).
+Caller info (caller, closure, frame, line, method, path, source, type).
 
 ```dart
 import 'package:caller_info/caller_info.dart';
 
 void main() {
   printInfo(new CallerInfo());
-  Foo.test();
-  new Foo().testClosure();
+  new Foo().test();
 }
 
 class Foo {
-  static void test() {
-    printInfo(new CallerInfo());
-  }
-
-  void testClosure() {
+  void test() {
     (() => printInfo(new CallerInfo()))();
   }
 }
 
 void printInfo(CallerInfo ci) {
-  print("======= Caller info =======");
+  print("==============");
   print("frame: ${ci.frame}");
   print("source: ${ci.source}");
+  print("path: ${CallerInfo.toFilePath(ci.source)}");
   print("line: ${ci.line}");
   print("caller: ${ci.caller}");
   print("type: ${ci.type}");
@@ -37,28 +33,22 @@ void printInfo(CallerInfo ci) {
 Output:
 
 ```
-======= Caller info =======
+==============
 frame: main (file:///home/andrew/dart/caller_info/example/example.dart:4:17)
 source: file:///home/andrew/dart/caller_info/example/example.dart
+path: /home/andrew/dart/caller_info/example/example.dart
 line: 4
 caller: main
 type: 
 method: main
 closure: false
-======= Caller info =======
-frame: Foo.test (file:///home/andrew/dart/caller_info/example/example.dart:11:19)
+==============
+frame: Foo.test.<anonymous closure> (file:///home/andrew/dart/caller_info/example/example.dart:10:26)
 source: file:///home/andrew/dart/caller_info/example/example.dart
-line: 11
-caller: Foo.test
+path: /home/andrew/dart/caller_info/example/example.dart
+line: 10
+caller: Foo.test.<anonymous closure>
 type: Foo
 method: test
-closure: false
-======= Caller info =======
-frame: Foo.testClosure.<anonymous closure> (file:///home/andrew/dart/caller_info/example/example.dart:15:26)
-source: file:///home/andrew/dart/caller_info/example/example.dart
-line: 15
-caller: Foo.testClosure.<anonymous closure>
-type: Foo
-method: testClosure
 closure: true
 ```

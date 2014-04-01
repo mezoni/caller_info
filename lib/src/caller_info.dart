@@ -1,4 +1,4 @@
-part of caller_info.caller_info;
+part of caller_info;
 
 class CallerInfo {
   static const String _ANONYMOUS_CLOSURE = "<anonymous closure>";
@@ -16,6 +16,30 @@ class CallerInfo {
   String source = "";
 
   String type = "";
+
+  static String toFilePath(String source) {
+    if (source == null || source.isEmpty) {
+      return "";
+    }
+
+    var uri = Uri.parse(source);
+    switch (uri.scheme) {
+      case "file":
+        return uri.toFilePath();
+      case "package":
+        var packageRoot = Platform.packageRoot;
+        if (packageRoot.isEmpty) {
+          var script = Platform.script.toFilePath();
+          packageRoot = pathos.join(pathos.dirname(script), "packages");
+        } else {
+          packageRoot = pathos.normalize(packageRoot);
+        }
+
+        return pathos.join(packageRoot, uri.path);
+    }
+
+    return "";
+  }
 
   CallerInfo() {
     try {
@@ -115,7 +139,8 @@ class CallerInfo {
     // Locate "line number"
     var sourceEnd = pos - 1;
     var lineLength = 0;
-    for (int start, i = separators.length - 1; i >= 0; i--, lineLength = sourceEnd - start, sourceEnd = start - 1) {
+    for (int start,
+        i = separators.length - 1; i >= 0; i--, lineLength = sourceEnd - start, sourceEnd = start - 1) {
       start = separators[i] + 1;
       var success = false;
       for (var j = start; j < sourceEnd; j++) {

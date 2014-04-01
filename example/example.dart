@@ -2,24 +2,20 @@ import 'package:caller_info/caller_info.dart';
 
 void main() {
   printInfo(new CallerInfo());
-  Foo.test();
-  new Foo().testClosure();
+  new Foo().test();
 }
 
 class Foo {
-  static void test() {
-    printInfo(new CallerInfo());
-  }
-
-  void testClosure() {
+  void test() {
     (() => printInfo(new CallerInfo()))();
   }
 }
 
 void printInfo(CallerInfo ci) {
-  print("======= Caller info =======");
+  print("==============");
   print("frame: ${ci.frame}");
   print("source: ${ci.source}");
+  print("path: ${CallerInfo.toFilePath(ci.source)}");
   print("line: ${ci.line}");
   print("caller: ${ci.caller}");
   print("type: ${ci.type}");
