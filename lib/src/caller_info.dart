@@ -9,6 +9,8 @@ class CallerInfo {
 
   bool _closure;
 
+  String _file;
+
   String _frame;
 
   int _frameEnd;
@@ -51,6 +53,17 @@ class CallerInfo {
     return _closure;
   }
 
+  String get file {
+    if (_file == null) {
+      _file = _Utils.getPath(source);
+      if (_file == null) {
+        _file = "";
+      }
+    }
+
+    return _file;
+  }
+
   String get frame {
     if (_frame == null) {
       if (_frameStart != null && _frameEnd != null) {
@@ -84,13 +97,6 @@ class CallerInfo {
 
     return _source;
   }
-
-  /*
-  String get path {
-    // TODO: path not implemented
-    return "";
-  }
-  */
 
   String get type {
     if (_type == null) {
@@ -187,7 +193,8 @@ class CallerInfo {
     // Locate "line number"
     _sourceEnd = pos - 1;
     var lineLength = 0;
-    for (int start, i = separators.length - 1; i >= 0; i--, lineLength = _sourceEnd - start, _sourceEnd = start - 1) {
+    for (int start,
+        i = separators.length - 1; i >= 0; i--, lineLength = _sourceEnd - start, _sourceEnd = start - 1) {
       start = separators[i] + 1;
       var success = false;
       for (var j = start; j < _sourceEnd; j++) {
@@ -250,4 +257,64 @@ class CallerInfo {
   }
 
   String toString() => _frame;
+}
+
+class _Utils {
+  static final LibraryMirror _dartIoMirror = _getDartIoMirror();
+
+  static final String _packageRoot = _getPackageRoot();
+
+  static String getPath(String source) {
+    if (source == null || source.isEmpty) {
+      return null;
+    }
+
+    var uri = Uri.parse(source);
+    switch (uri.scheme) {
+      case "package":
+        var packageRoot = _packageRoot;
+        if (packageRoot == null) {
+          return null;
+        }
+
+        return pathos.join(packageRoot, uri.path);
+    }
+
+    return uri.path;
+  }
+
+  static LibraryMirror _getDartIoMirror() {
+    return currentMirrorSystem().libraries[Uri.parse("dart:io")];
+  }
+
+  static String _getPackageRoot() {
+    if (_dartIoMirror == null) {
+      var base = Uri.base.toString();
+      if (base.isEmpty) {
+        return null;
+      }
+
+      return pathos.join(base, "packages");
+    }
+
+    ClassMirror platform = _dartIoMirror.declarations[#Platform];
+    if (platform == null) {
+      return null;
+    }
+
+    String packageRoot = platform.getField(#packageRoot).reflectee;
+    if (!packageRoot.isEmpty) {
+      return packageRoot;
+    }
+
+    String script = (platform.getField(#script).reflectee as Uri).path;
+    if (script.isEmpty) {
+      return null;
+    }
+
+    return pathos.join(pathos.dirname(script), "packages");
+  }
+
+  String _parsePath() {
+  }
 }

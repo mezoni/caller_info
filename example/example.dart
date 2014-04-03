@@ -15,6 +15,7 @@ void printInfo(CallerInfo ci) {
   print("==============");
   print("frame: ${ci.frame}");
   print("source: ${ci.source}");
+  print("file: ${ci.file}");
   print("line: ${ci.line}");
   print("caller: ${ci.caller}");
   print("type: ${ci.type}");
