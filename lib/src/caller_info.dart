@@ -9,7 +9,9 @@ class CallerInfo {
 
   bool _closure;
 
-  String _file;
+  Uri _file;
+
+  bool _fileParsed = false;
 
   String _frame;
 
@@ -53,12 +55,10 @@ class CallerInfo {
     return _closure;
   }
 
-  String get file {
-    if (_file == null) {
-      _file = _Utils.getPath(source);
-      if (_file == null) {
-        _file = "";
-      }
+  Uri get file {
+    if (!_fileParsed) {
+      _file = _Utils.getSourceUri(source);
+      _fileParsed = true;
     }
 
     return _file;
@@ -262,29 +262,74 @@ class CallerInfo {
 class _Utils {
   static final LibraryMirror _dartIoMirror = _getDartIoMirror();
 
+  static final bool _isWindows = _getIsWindows();
+
+  static final String _separator = _isWindows ? "\\" : "/";
+
   static final String _packageRoot = _getPackageRoot();
 
-  static String getPath(String source) {
+  static final int _windowsSeparator = _isWindows ? 92 : null;
+
+  static Uri getSourceUri(String source) {
     if (source == null || source.isEmpty) {
       return null;
     }
 
     var uri = Uri.parse(source);
     switch (uri.scheme) {
+      case "dart":
+      case "dart-ext":
+        return null;
       case "package":
         var packageRoot = _packageRoot;
         if (packageRoot == null) {
           return null;
         }
 
-        return pathos.join(packageRoot, uri.path);
+        return Uri.parse(_join(packageRoot, uri.path));
     }
 
-    return uri.path;
+    return uri;
+  }
+
+  static String _dirname(String uri) {
+    var length = uri.length;
+    if (length == null) {
+      return uri;
+    }
+
+    var found = false;
+    var position = length - 1;
+    while (true) {
+      if (position < 0) {
+        break;
+      }
+
+      var c = uri.codeUnitAt(position--);
+      if (c == 47 || c == _windowsSeparator) {
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      return uri;
+    }
+
+    return uri.substring(0, position + 1);
   }
 
   static LibraryMirror _getDartIoMirror() {
     return currentMirrorSystem().libraries[Uri.parse("dart:io")];
+  }
+
+  static bool _getIsWindows() {
+    if (_dartIoMirror == null) {
+      return false;
+    }
+
+    ClassMirror platform = _dartIoMirror.declarations[#Platform];
+    return platform.getField(#isWindows).reflectee;
   }
 
   static String _getPackageRoot() {
@@ -294,27 +339,38 @@ class _Utils {
         return null;
       }
 
-      return pathos.join(base, "packages");
+      return _join(_dirname(base), "packages");
     }
 
     ClassMirror platform = _dartIoMirror.declarations[#Platform];
-    if (platform == null) {
-      return null;
-    }
-
     String packageRoot = platform.getField(#packageRoot).reflectee;
+    var packages = "packages";
     if (!packageRoot.isEmpty) {
-      return packageRoot;
+      if (pathos.isAbsolute(packageRoot)) {
+        var path = pathos.normalize(packageRoot);
+        if (_windowsSeparator != null) {
+          path = path.replaceAll("\\", "/");
+        }
+
+        return new Uri(scheme: "file", path: path).toString();
+      }
+
+      packages = pathos.normalize(packageRoot);
     }
 
-    String script = (platform.getField(#script).reflectee as Uri).path;
+    String script = platform.getField(#script).reflectee.toString();
     if (script.isEmpty) {
       return null;
     }
 
-    return pathos.join(pathos.dirname(script), "packages");
+    return _join(_dirname(script), packages);
   }
 
-  String _parsePath() {
+  static String _join(String part1, String part2) {
+    if (part2.isEmpty) {
+      return part1;
+    }
+
+    return "$part1$_separator$part2";
   }
 }

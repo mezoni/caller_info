@@ -8,7 +8,6 @@ void testGetLine() {
 }
 
 void main() {
-  var path = new CallerInfo().file;
   testGetClosure();
   testGetLine();
   testGetMethod();
