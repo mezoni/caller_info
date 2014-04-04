@@ -1,10 +1,11 @@
 import 'package:caller_info/caller_info.dart';
+import 'package:caller_info/src/test_only_package_sheme.dart';
 import 'package:path/path.dart' as pathos;
 import 'package:unittest/unittest.dart';
 
 void testGetLine() {
   var line = new CallerInfo().line;
-  expect(line, 6, reason: "CallerInfo.line");
+  expect(line, 7, reason: "CallerInfo.line");
 }
 
 void main() {
@@ -13,6 +14,7 @@ void main() {
   testGetMethod();
   testGetSource();
   testGetType();
+  testPackageSheme();
 }
 
 void testGetClosure() {
@@ -67,6 +69,23 @@ void testGetType() {
   reason = "CallerInfo.type for global method with closure";
   var ci = (){ return new CallerInfo(); }();
   expect(ci.type, "", reason: reason);
+}
+
+void testPackageSheme() {
+  var ci = new CallerInfo();
+  var path = ci.file.path;
+  var base = pathos.dirname(path);
+  ci = TestOnlyPackageSheme.getCallerInfo();
+  var uri = Uri.parse(ci.source);
+  var reason = "package Uri scheme";
+  expect(uri.scheme, "package", reason: reason);
+  var file = ci.file;
+  path = file.path;
+  reason = "CallerInfo.file.sheme for package";
+  expect(file.scheme, "file", reason: reason);
+  var within = pathos.isWithin(base, path);
+  reason = "CallerInfo.file for package must be within";
+  expect(within, true, reason: reason);
 }
 
 class Foo {

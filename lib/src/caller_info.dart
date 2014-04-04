@@ -3,6 +3,8 @@ part of caller_info;
 class CallerInfo {
   static const String _ANONYMOUS_CLOSURE = "<anonymous closure>";
 
+  static final bool isBrowser = _Utils._dartIoMirror == null;
+
   String _caller;
 
   List<int> _callerSeparators = new List<int>();
@@ -10,8 +12,6 @@ class CallerInfo {
   bool _closure;
 
   Uri _file;
-
-  bool _fileParsed = false;
 
   String _frame;
 
@@ -56,9 +56,8 @@ class CallerInfo {
   }
 
   Uri get file {
-    if (!_fileParsed) {
+    if (_file == null) {
       _file = _Utils.getSourceUri(source);
-      _fileParsed = true;
     }
 
     return _file;
@@ -272,18 +271,18 @@ class _Utils {
 
   static Uri getSourceUri(String source) {
     if (source == null || source.isEmpty) {
-      return null;
+      return new Uri();
     }
 
     var uri = Uri.parse(source);
     switch (uri.scheme) {
       case "dart":
       case "dart-ext":
-        return null;
+        return new Uri();
       case "package":
         var packageRoot = _packageRoot;
         if (packageRoot == null) {
-          return null;
+          return new Uri();
         }
 
         return Uri.parse(_join(packageRoot, uri.path));
@@ -348,7 +347,7 @@ class _Utils {
     if (!packageRoot.isEmpty) {
       if (pathos.isAbsolute(packageRoot)) {
         var path = pathos.normalize(packageRoot);
-        if (_windowsSeparator != null) {
+        if (_isWindows) {
           path = path.replaceAll("\\", "/");
         }
 
