@@ -105,6 +105,8 @@ class CallerInfo {
     return _type;
   }
 
+  String toString() => _frame;
+
   void _parse() {
     var length = _trace.length;
     var pos = 0;
@@ -254,8 +256,6 @@ class CallerInfo {
       _closure = true;
     }
   }
-
-  String toString() => _frame;
 }
 
 class _Utils {
@@ -355,6 +355,9 @@ class _Utils {
       }
 
       packages = pathos.normalize(packageRoot);
+      if (_isWindows) {
+        packages = packages.replaceAll("\\", "/");
+      }
     }
 
     String script = platform.getField(#script).reflectee.toString();
@@ -370,6 +373,7 @@ class _Utils {
       return part1;
     }
 
-    return "$part1$_separator$part2";
+    //return "$part1$_separator$part2";
+    return "$part1/$part2";
   }
 }

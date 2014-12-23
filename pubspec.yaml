@@ -1,5 +1,5 @@
 name: caller_info
-version: 0.0.8
+version: 0.0.9
 author: Andrew Mezoni <andrew.mezoni@gmail.com>
 description: Caller info (caller, closure, file, frame, line, method, source, type).
 homepage: https://github.com/mezoni/caller_info
